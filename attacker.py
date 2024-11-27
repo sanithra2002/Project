@@ -115,23 +115,30 @@ def system_scanner():
 # Fuzzer
 def find_directories(base_url, wordlist_file):
     found_dirs = []
-    unfound_dirs = []
-    with open(wordlist_file, 'r') as file:
-        directories = file.read().splitlines()
-    for directory in directories:
-        url = f"{base_url}/{directory}/"
-        try:
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                found_dirs.append(url)
-            elif response.status_code == 403:
-                found_dirs.append(url)
-            else:
-                unfound_dirs.append(url)
-        except requests.exceptions.RequestException:
-            pass
-    print(f"Found directories: {found_dirs}")
-    print(f"Not found directories: {unfound_dirs}")
+    try:
+        with open(wordlist_file, 'r') as file:
+            directories = file.read().splitlines()
+        print(Fore.CYAN + "Starting directory search...")
+        
+        for directory in directories:
+            url = f"{base_url}/{directory}/"
+            try:
+                response = requests.get(url, timeout=5)
+                if response.status_code == 200:
+                    found_dirs.append(url)
+                    print(Fore.GREEN + f"[FOUND] {url}")
+                elif response.status_code == 403:
+                    found_dirs.append(url)
+                    print(Fore.YELLOW + f"[FORBIDDEN] {url}")
+                else:
+                    print(Fore.RED + f"[NOT FOUND] {url}")
+            except requests.exceptions.RequestException as e:
+                print(Fore.RED + f"[ERROR] {url}: {str(e)}")
+        
+        print("\n" + Fore.GREEN + "Directory search completed!")
+        print(Fore.GREEN + f"Found directories: {found_dirs}")
+    except FileNotFoundError:
+        print(Fore.RED + f"Wordlist file '{wordlist_file}' not found.")
 
 
 def fuzzer():
@@ -175,7 +182,7 @@ def main():
     loading_animation()
     clear_screen()
     port_scanning_art()
-    typing_print("\033[38;2;0;0;255mWelcome to the Advanced Security Suite v1.0\033[0m", 0.05)
+    typing_print("Welcome to the Advanced Security Suite v1.0", 0.05)
     time.sleep(1)
     options_menu()
 
