@@ -1,159 +1,168 @@
-import os
 import time
+import os
 import sys
-import threading
-import subprocess
 import random
-from pyudev import Context, Monitor, MonitorObserver
-import requests
-import tkinter as tk
-from tkinter import scrolledtext, messagebox
-from colorama import Fore, Style, init
-
-init(autoreset=True)  # Initialize Colorama for cross-platform compatibility
+import colorama
+from colorama import Fore, Style
 
 
-# Utilities for Cyberpunk UI
 def clear_screen():
+    """Clears the screen."""
     os.system('cls' if os.name == 'nt' else 'clear')
 
-
 def typing_print(text, delay=0.05):
+    """Simulates typing animation for text."""
     for char in text:
         print(char, end="", flush=True)
         time.sleep(delay)
-    print()
-
+    print()  # Add a newline after the typing effect
 
 def animate_option(num, name, desc):
-    CYBER_GREEN = "\033[38;2;0;255;128m"
-    CYBER_PINK = "\033[38;2;255;20;147m"
-    CYBER_BLUE = "\033[38;2;0;255;255m"
-    RESET = "\033[0m"
-    option_text = f"{CYBER_GREEN}{num}{RESET} {CYBER_PINK}{name}{RESET} - {CYBER_BLUE}{desc}{RESET}"
+    """Add animation for each option's display with cyberpunk colors."""
+    # Cyberpunk-inspired colors using ANSI escape codes
+    CYBER_GREEN = "\033[38;2;0;255;128m"  # Neon green
+    CYBER_PINK = "\033[38;2;255;20;147m"  # Neon pink
+    CYBER_BLUE = "\033[38;2;0;255;255m"   # Neon cyan
+    RESET = "\033[0m"                     # Reset color
+
+    # Assemble the styled string
+    option_text = (
+        f"{CYBER_GREEN}{num}{RESET} "  # Number in neon green
+        f"{CYBER_PINK}{name}{RESET} - "  # Name in neon pink
+        f"{CYBER_BLUE}{desc}{RESET}"  # Description in neon cyan
+    )
+    
+    # Print with typing animation
     typing_print(option_text, 0.05)
-
-
+def glitch_effect(text, repetitions=3):
+    """Applies a glitch effect to the text."""
+    glitch_chars = '!@#$%&'
+    for _ in range(repetitions):
+        glitched_text = ''.join(random.choice(glitch_chars) if random.random() < 0.1 else char for char in text)
+        print(Fore.RED + glitched_text, end='\r')
+        time.sleep(0.1)
+    print(text)
 def loading_animation(duration=3):
-    animation = ["[□□□□□□□□□□]", "[■□□□□□□□□□]", "[■■□□□□□□□□]", "[■■■□□□□□□□]",
-                 "[■■■■□□□□□□]", "[■■■■■□□□□□]", "[■■■■■■□□□□]", "[■■■■■■■□□□]",
-                 "[■■■■■■■■□□]", "[■■■■■■■■■□]", "[■■■■■■■■■■]"]
+    """Displays a loading animation for the specified duration."""
+    animation = [
+        "[□□□□□□□□□□]",
+        "[■□□□□□□□□□]",
+        "[■■□□□□□□□□]",
+        "[■■■□□□□□□□]",
+        "[■■■■□□□□□□]",
+        "[■■■■■□□□□□]",
+        "[■■■■■■□□□□]",
+        "[■■■■■■■□□□]",
+        "[■■■■■■■■□□]",
+        "[■■■■■■■■■□]",
+        "[■■■■■■■■■■]"
+    ]
+    
     start_time = time.time()
+    i = 0
     while time.time() - start_time < duration:
-        for frame in animation:
-            print(f"\033[38;2;0;255;255m{frame} LOADING OPTIONS", end='\r', flush=True)
-            time.sleep(0.1)
-    print("\033[F\033[K", end='')
+        print("\033[38;2;0;255;255m" + animation[i % len(animation)] + " LOADING OPTIONS", end='\r')
+        time.sleep(0.1)
+        i += 1
+    print()  # Clear the loading animation line
+    sys.stdout.write("\033[F\033[K")  # Move the cursor up and clear the line
+def port_scanning_art():
+    art = [
+        "                                                                        ",
+        "   _______              _    ______                                     ",
+        "  |__   __|            | |  |  ____|                                    ",
+        "     | | ___  _ __  ___| |_ | |__   _ __   __ _  __ _  __ _  ___        ",
+        "     | |/ _ \\| '_ \\/ __| __||  __| | '_ \\ / _` |/ _` |/ _` |/ _ \\       ",
+        "     | | (_) | | | \\__ \\ |_ | |____| | | | (_| | (_| | (_| |  __/      ",
+        "     |_|\\___/|_| |_|___/\\__||______|_| |_|\\__, |\\__,_|\\__, |\\___|      ",
+        "                                            __/ |       __/ |          ",
+        "                                           |___/       |___/           ",
+        "                                                                       "
+    ]
+    # Add glitch effect to the art
+    for line in art:
+        glitch_effect(Fore.CYAN + Style.BRIGHT + line)
+        time.sleep(0.1)
+def display_status(message, status="success"):
+    """Displays a status message with cyberpunk color codes."""
+    status_colors = {
+        "success": "\033[38;2;0;255;128m",  # Neon green
+        "warning": "\033[38;2;255;255;0m",  # Yellow
+        "error": "\033[38;2;255;0;0m",      # Red
+        "info": "\033[38;2;0;255;255m"      # Cyan
+    }
+    color = status_colors.get(status, "\033[0m")  # Default to reset
+    print(f"\n{color}[{status.upper()}] {message}\033[0m")
 
+def menu_loading_animation():
+    """Displays an animation for loading menu options."""
+    menu_title = "LOADING MENU OPTIONS..."
+    for i in range(len(menu_title) + 1):
+        sys.stdout.write("\033[38;2;0;255;0m" + menu_title[:i] + "\r")
+        sys.stdout.flush()
+        time.sleep(0.05)
+    print()  # Move to the next line
 
-# USB Scanner
-def on_device_event(device):
-    if device.action == 'add' and device.get('ID_FS_TYPE') in ['vfat', 'ntfs', 'exfat', 'ext4']:
-        dev_path = device.get('DEVNAME')
-        scan_device(dev_path)
-
-
-def scan_device(dev_path):
-    command = ['sudo', 'clamscan', '-r', '--remove', dev_path]
-    log_file_path = os.path.join(dev_path, 'clamscan_log.txt')
-    try:
-        result = subprocess.run(command, capture_output=True, text=True)
-        print(result.stdout)
-        with open(log_file_path, 'a') as log_file:
-            log_file.write(result.stdout)
-        print(f"Scan Completed! Log saved to {log_file_path}.")
-    except Exception as e:
-        print(f"Error: {str(e)}")
-
-
-def usb_scanner():
-    context = Context()
-    monitor = Monitor.from_netlink(context)
-    monitor.filter_by(subsystem='block')
-    observer = MonitorObserver(monitor, callback=on_device_event, name='observer')
-    observer.start()
-    typing_print("Monitoring USB ports. Plug in a USB device to test...", 0.05)
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-
-
-# System Scanner
-def system_scanner():
-    print("Preparing for system scan...")
-    target_ip = input("Enter the target IP address: ").strip()
-    if input("Are you sure you want to proceed? (y/n): ").lower() == 'y':
-        subprocess.run(['nmap', '-sS', '-sV', '-O', target_ip])
-        subprocess.run(['nmap', '--script', 'vuln', target_ip])
-
-
-# Fuzzer
-def find_directories(base_url, wordlist_file):
-    found_dirs = []
-    unfound_dirs = []
-    with open(wordlist_file, 'r') as file:
-        directories = file.read().splitlines()
-    for directory in directories:
-        url = f"{base_url}/{directory}/"
-        try:
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                found_dirs.append(url)
-            elif response.status_code == 403:
-                found_dirs.append(url)
-            else:
-                unfound_dirs.append(url)
-        except requests.exceptions.RequestException:
-            pass
-    print(f"Found directories: {found_dirs}")
-    print(f"Not found directories: {unfound_dirs}")
-
-
-def fuzzer():
-    base_url = input("Enter the website URL: ").strip()
-    wordlist_file = "common.txt"
-    find_directories(base_url, wordlist_file)
-
-
-# Main Menu
 def options_menu():
+    """Displays the options menu with cyberpunk effects."""
     while True:
-        clear_screen()
+        menu_loading_animation()
         print("\033[38;2;255;20;147m\n╔═══════════════════════════╗")
         print("\033[38;2;255;20;147m║      SYSTEM OPTIONS       ║")
         print("\033[38;2;255;20;147m╚═══════════════════════════╝")
+        
         options = [
-            ("[1]", "USB Scanner", "Scan connected USB devices"),
-            ("[2]", "System Scanner", "Scan system vulnerabilities"),
-            ("[3]", "URL Fuzzer", "Discover hidden endpoints"),
-            ("[4]", "Exit", "Terminate program")
+            ("[ 1 ]", "Domain Checker", "Analyze domain security status"),
+            ("[ 2 ]", "URL Fuzzer", "Discover hidden endpoints"),
+            ("[ 3 ]", "System Scanner", "Scan system vulnerabilities"),
+            ("[ 4 ]", "External Device Scanner", "Detect connected devices"),
+            ("[ 5 ]", "Backdoor Detector", "Check for unauthorized access"),
+            ("[ 6 ]", "Exit", "Terminate program")
         ]
+        
+        # Add animation for each menu option
         for num, name, desc in options:
             animate_option(num, name, desc)
-        choice = input("\n[INPUT] Enter your choice (1-4): ").strip()
+        
+        choice = input(f"\n\033[38;2;255;0;0m[INPUT] Enter your choice (1-6): \033[0m")
+        
         if choice == "1":
-            usb_scanner()
+            display_status("Initializing Domain Checker...", "info")
+            loading_animation(2)
+            display_status("Domain Checker activated", "success")
         elif choice == "2":
-            system_scanner()
+            display_status("Initializing URL Fuzzer...", "info")
+            loading_animation(2)
+            display_status("URL Fuzzer activated", "success")
         elif choice == "3":
-            fuzzer()
+            display_status("Initializing System Scanner...", "info")
+            loading_animation(2)
+            display_status("System Scanner activated", "success")
         elif choice == "4":
-            typing_print("\033[38;2;255;0;0mSystem terminated. Goodbye!", 0.05)
+            display_status("Initializing External Device Scanner...", "info")
+            loading_animation(2)
+            display_status("External Device Scanner activated", "success")
+        elif choice == "5":
+            display_status("Initializing Backdoor Detector...", "info")
+            loading_animation(2)
+            display_status("Backdoor Detector activated", "success")
+        elif choice == "6":
+            display_status("Shutting down system...", "info")
+            loading_animation(2)
+            typing_print("\033[38;2;255;0;0mSystem terminated. Goodbye!\033[0m")
             break
         else:
-            print("\033[38;2;255;0;0mInvalid option! Please try again.\033[0m")
-
+            display_status("Invalid option selected", "error")
 
 def main():
+    """Main function to initialize the system."""
     clear_screen()
     loading_animation()
     clear_screen()
+    port_scanning_art()
     typing_print("\033[38;2;0;0;255mWelcome to the Advanced Security Suite v1.0\033[0m", 0.05)
     time.sleep(1)
     options_menu()
-
 
 if __name__ == "__main__":
     main()
