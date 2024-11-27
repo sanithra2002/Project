@@ -30,7 +30,7 @@ def animate_option(num, name, desc):
     CYBER_PINK = "\033[38;2;255;20;147m"
     CYBER_BLUE = "\033[38;2;0;255;255m"
     RESET = "\033[0m"
-    option_text = f"{CYBER_GREEN}{num}{RESET} {CYBER_PINK}{name}{RESET} - {CYBER_BLUE}{desc}{RESET}"
+    option_text = f"{num}{name}- {desc}"
     typing_print(option_text, 0.05)
 
 def glitch_effect(text, repetitions=3):
@@ -163,18 +163,18 @@ def options_menu():
         elif choice == "3":
             fuzzer()
         elif choice == "4":
-            typing_print("\033[38;2;255;0;0mSystem terminated. Goodbye!", 0.05)
+            typing_print("System terminated. Goodbye!", 0.05)
             break
         else:
-            print("\033[38;2;255;0;0mInvalid option! Please try again.\033[0m")
+            print("Invalid option! Please try again.")
 
 
 
 def main():
     clear_screen()
-    port_scanning_art()
     loading_animation()
     clear_screen()
+    port_scanning_art()
     typing_print("\033[38;2;0;0;255mWelcome to the Advanced Security Suite v1.0\033[0m", 0.05)
     time.sleep(1)
     options_menu()
